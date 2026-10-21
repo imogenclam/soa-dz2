@@ -1,0 +1,5 @@
+# генерируется из api/openapi.yaml
+internal/api/api.gen.go
+*.exe
+.idea/
+.vscode/

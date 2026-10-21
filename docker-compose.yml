@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: marketplace
+      POSTGRES_USER: marketplace
+      POSTGRES_PASSWORD: marketplace
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "marketplace"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: flyway/flyway:11-alpine
+    command: -url=jdbc:postgresql://db:5432/marketplace -user=marketplace -password=marketplace migrate
+    volumes:
+      - ./db/migration:/flyway/sql
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://marketplace:marketplace@db:5432/marketplace
+      JWT_SECRET: dev-secret-change-me
+      ORDER_RATE_LIMIT_MINUTES: ${ORDER_RATE_LIMIT_MINUTES:-1}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
